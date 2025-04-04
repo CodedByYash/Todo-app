@@ -4,13 +4,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
-  Form,
+  Form as FormComponent, // Rename to avoid conflict
   FormControl,
   FormDescription,
   FormField,
@@ -53,51 +53,82 @@ const CardWrapper = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+// Define the form schema type
+type FormData = z.infer<typeof formSchema>;
+
 // Form schema
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
-  priority: z.enum(["low", "medium", "high"]),
-  dueDate: z.date({
-    required_error: "Due date is required",
-  }),
-  workspaceId: z.string().uuid("Invalid workspace ID"),
+  priority: z.enum(["no_priority", "low", "medium", "high"]),
+  dueDate: z.date().optional(),
+  workspaceId: z.string(), // Required, "personal" will be transformed in API
+  tags: z.array(z.string()),
 });
 
-export function TaskForm() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+// Add to component props
+type TaskFormProps = {
+  workspaceId?: string;
+};
 
-  // Define form
-  const form = useForm<z.infer<typeof formSchema>>({
+export function TaskForm({ workspaceId }: TaskFormProps = {}) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [workspaces, setWorkspaces] = useState<{ id: string; name: string }[]>(
+    []
+  );
+
+  // Initialize the form
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
       description: "",
-      priority: "medium",
+      priority: "low",
+      workspaceId: workspaceId || "personal", // Default to "personal"
+      tags: [],
+      dueDate: undefined,
     },
   });
 
-  // Submit handler
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  useEffect(() => {
+    const fetchWorkspaces = async () => {
+      try {
+        const response = await fetch("/api/workspaces");
+        if (response.ok) {
+          const data = await response.json();
+          setWorkspaces(data);
+        }
+      } catch (error) {
+        console.error("Error fetching workspaces:", error);
+      }
+    };
+    fetchWorkspaces();
+  }, []);
+
+  async function onSubmit(values: FormData) {
     setIsSubmitting(true);
     try {
+      const taskData = {
+        ...values,
+        dueDate: values.dueDate ? values.dueDate.toISOString() : null,
+      };
+      console.log("Sending task data:", taskData);
+
       const response = await fetch("/api/tasks", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ...values,
-          dueDate: values.dueDate.toISOString(),
-        }),
+        body: JSON.stringify(taskData),
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        console.log("Server error:", errorData);
         throw new Error("Failed to create task");
       }
 
-      // Reset form on success
-      form.reset();
+      form.reset(); // Reset the form on success
     } catch (error) {
       console.error("Error creating task:", error);
     } finally {
@@ -108,7 +139,7 @@ export function TaskForm() {
   return (
     <CardWrapper>
       <h2 className="mb-6 text-2xl font-bold">Create New Task</h2>
-      <Form {...form}>
+      <FormComponent {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
             control={form.control}
@@ -149,16 +180,14 @@ export function TaskForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Priority</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select priority" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="no_priority">No priority</SelectItem>
                       <SelectItem value="low">Low</SelectItem>
                       <SelectItem value="medium">Medium</SelectItem>
                       <SelectItem value="high">High</SelectItem>
@@ -218,15 +247,21 @@ export function TaskForm() {
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select workspace" />
+                      <SelectValue placeholder="Select a workspace" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {/* This would be populated from your API */}
-                    <SelectItem value="workspace-id-1">Workspace 1</SelectItem>
-                    <SelectItem value="workspace-id-2">Workspace 2</SelectItem>
+                    <SelectItem value="personal">Personal</SelectItem>
+                    {workspaces.map((workspace) => (
+                      <SelectItem key={workspace.id} value={workspace.id}>
+                        {workspace.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+                <FormDescription>
+                  Assign this task to a workspace or keep it personal.
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -235,14 +270,14 @@ export function TaskForm() {
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Creating..." : "Create Task"}
             </Button>
           </motion.div>
         </form>
-      </Form>
+      </FormComponent>
     </CardWrapper>
   );
 }

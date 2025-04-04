@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { format } from "date-fns";
 import {
   CheckCircle2,
   Circle,
@@ -24,13 +23,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TaskItem } from "@/components/tasks/TaskItem";
 
 // Define task type
-type Task = {
+export type Task = {
   id: string;
   title: string;
   description: string;
@@ -51,8 +49,18 @@ type FilterState = {
 
 type SortOption = "newest" | "oldest" | "priority" | "dueDate";
 
-export function TaskList() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+type TaskListProps = {
+  initialTasks: Task[];
+  workspaceId: string | null;
+  onTasksChange: (updatedTasks: Task[]) => void;
+};
+
+export function TaskList({
+  initialTasks,
+  workspaceId,
+  onTasksChange,
+}: TaskListProps) {
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,14 +89,14 @@ export function TaskList() {
         }
 
         const data = await response.json();
-        setTasks(data);
+        setTasks(Array.isArray(data) ? data : []);
 
         // Extract unique tags
         const tags = new Set<string>();
         const tagObjects: { id: string; name: string }[] = [];
 
-        data.forEach((task: Task) => {
-          task.tags.forEach((tag) => {
+        (Array.isArray(data) ? data : []).forEach((task: Task) => {
+          task.tags?.forEach((tag) => {
             if (!tags.has(tag.id)) {
               tags.add(tag.id);
               tagObjects.push(tag);
@@ -112,19 +120,19 @@ export function TaskList() {
   useEffect(() => {
     let result = [...tasks];
 
-    // Apply status filter
+    // Filter by status
     if (filters.status !== "all") {
       result = result.filter((task) =>
         filters.status === "completed" ? task.completed : !task.completed
       );
     }
 
-    // Apply priority filter
+    // Filter by priority
     if (filters.priority !== "all") {
       result = result.filter((task) => task.priority === filters.priority);
     }
 
-    // Apply due date filter
+    // Filter by due date
     if (filters.dueDate !== "all") {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -138,48 +146,50 @@ export function TaskList() {
       result = result.filter((task) => {
         const dueDate = new Date(task.dueDate);
 
-        switch (filters.dueDate) {
-          case "today":
-            return dueDate.toDateString() === today.toDateString();
-          case "week":
-            return dueDate >= today && dueDate <= weekLater;
-          case "month":
-            return dueDate >= today && dueDate <= monthLater;
-          case "overdue":
-            return dueDate < today && !task.completed;
-          default:
-            return true;
+        if (filters.dueDate === "today") {
+          return (
+            dueDate.getDate() === today.getDate() &&
+            dueDate.getMonth() === today.getMonth() &&
+            dueDate.getFullYear() === today.getFullYear()
+          );
+        } else if (filters.dueDate === "week") {
+          return dueDate >= today && dueDate <= weekLater;
+        } else if (filters.dueDate === "month") {
+          return dueDate >= today && dueDate <= monthLater;
+        } else if (filters.dueDate === "overdue") {
+          return dueDate < today && !task.completed;
         }
+        return true;
       });
     }
 
-    // Apply tags filter
+    // Filter by tags
     if (filters.tags.length > 0) {
-      result = result.filter((task) =>
-        task.tags.some((tag) => filters.tags.includes(tag.id))
+      result = result.filter(
+        (task) =>
+          task.tags?.some((tag) => filters.tags.includes(tag.id)) || false
       );
     }
 
-    // Apply sorting
+    // Sort tasks
     result.sort((a, b) => {
-      switch (sortBy) {
-        case "newest":
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-        case "oldest":
-          return (
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          );
-        case "priority": {
-          const priorityOrder = { high: 0, medium: 1, low: 2 };
-          return priorityOrder[a.priority] - priorityOrder[b.priority];
-        }
-        case "dueDate":
-          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-        default:
-          return 0;
+      if (sortBy === "newest") {
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+      } else if (sortBy === "oldest") {
+        return (
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+      } else if (sortBy === "priority") {
+        const priorityOrder = { high: 0, medium: 1, low: 2 };
+        return (
+          (priorityOrder[a.priority] || 0) - (priorityOrder[b.priority] || 0)
+        );
+      } else if (sortBy === "dueDate") {
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
       }
+      return 0;
     });
 
     setFilteredTasks(result);
