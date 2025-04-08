@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { User } from "@clerk/nextjs/server";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -31,11 +30,9 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnimatedGradientBorder } from "@/components/ui/animated-gradient-border";
 import { Badge } from "@/components/ui/badge";
 

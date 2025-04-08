@@ -44,6 +44,10 @@ export async function POST(req: NextRequest) {
           clerkId: userId,
           email: user.emailAddresses[0].emailAddress,
           name: `${user.firstName} ${user.lastName}`,
+          firstname: user.firstName || "",
+          lastname: user.lastName || "",
+          username:
+            user.username || user.emailAddresses[0].emailAddress.split("@")[0],
         },
       });
     }
@@ -60,6 +64,23 @@ export async function POST(req: NextRequest) {
       if (existingPersonalWorkspace) {
         return NextResponse.json(
           { error: "You already have a personal workspace" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // For PROFESSIONAL workspaces, check if user already has one
+    if (validatedData.data.type === "PROFESSIONAL") {
+      const existingProfessionalWorkspace = await db.workspace.findFirst({
+        where: {
+          ownerId: dbUser.id,
+          type: "PROFESSIONAL",
+        },
+      });
+
+      if (existingProfessionalWorkspace) {
+        return NextResponse.json(
+          { error: "You can only create one free professional workspace." },
           { status: 400 }
         );
       }

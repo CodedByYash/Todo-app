@@ -54,7 +54,7 @@ export default async function WorkspacePage({
   }
 
   // Get recent tasks for this workspace
-  const recentTasks = await db.task.findMany({
+  const recentTasks = await db.tasks.findMany({
     where: {
       workspaceId: params.id,
     },

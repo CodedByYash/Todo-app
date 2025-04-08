@@ -10,7 +10,6 @@ import {
   Pencil,
   Trash2,
   Calendar,
-  AlertTriangle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -35,8 +34,8 @@ type Task = {
   title: string;
   description: string;
   completed: boolean;
-  priority: "low" | "medium" | "high";
-  dueDate: string;
+  priority: "low" | "medium" | "high" | "no_priority";
+  dueDate: string | number | Date;
   tags: { id: string; name: string }[];
   createdAt: string;
 };
@@ -51,7 +50,9 @@ export function TaskItem({ task, onToggleComplete, onDelete }: TaskItemProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Format due date
-  const formattedDueDate = format(new Date(task.dueDate), "MMM d, yyyy");
+  const formattedDueDate = task.dueDate
+    ? format(new Date(task.dueDate), "PPP")
+    : "No due date";
 
   // Check if task is overdue
   const isOverdue = new Date(task.dueDate) < new Date() && !task.completed;
@@ -61,6 +62,7 @@ export function TaskItem({ task, onToggleComplete, onDelete }: TaskItemProps) {
     low: "bg-green-500",
     medium: "bg-yellow-500",
     high: "bg-red-500",
+    no_priority: "bg-green-100",
   };
 
   return (

@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
-import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+// import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 
 export default async function DashboardLayout({
   children,
@@ -16,7 +16,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex h-[calc(100vh-4rem)]">
-      <DashboardSidebar />
+      {/* <DashboardSidebar /> */}
       <main className="flex-1 overflow-y-auto p-6">{children}</main>
     </div>
   );

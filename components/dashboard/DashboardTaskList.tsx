@@ -3,6 +3,8 @@
 import { TaskList } from "@/components/tasks/TaskList";
 import type { Task } from "@/components/tasks/TaskList";
 
+type DashboardTask = Task;
+
 type DashboardTaskListProps = {
   initialTasks: Task[];
 };

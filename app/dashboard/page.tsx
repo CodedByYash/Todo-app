@@ -1,10 +1,8 @@
-import { TaskList } from "@/components/tasks/TaskList";
-import { DashboardTaskList } from "@/components/dashboard/DashboardTaskList";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
+import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 
 export default async function DashboardPage() {
   const user = await currentUser();
@@ -22,7 +20,7 @@ export default async function DashboardPage() {
     redirect("/onboarding");
   }
 
-  // Check if user has any workspaces
+  // Get user's workspaces
   const workspaces = await db.workspace.findMany({
     where: {
       members: {
@@ -31,46 +29,52 @@ export default async function DashboardPage() {
         },
       },
     },
+    take: 5,
+    orderBy: {
+      updatedAt: "desc",
+    },
   });
 
-  // If no workspaces, redirect to workspace creation
-  if (workspaces.length === 0) {
-    redirect("/dashboard/workspaces/new");
-  }
-
-  // Get tasks for this user
-  const tasks = await db.tasks.findMany({
+  // Get user's recent tasks
+  const recentTasks = await db.tasks.findMany({
     where: {
       userId: dbUser.id,
     },
+    take: 5,
     orderBy: {
-      createdAt: "desc",
-    },
-    include: {
-      tags: true,
+      updatedAt: "desc",
     },
   });
 
-  // Convert Date objects to strings for the TaskList component
-  const formattedTasks = tasks.map((task) => ({
-    ...task,
-    dueDate: task.dueDate.toISOString(),
-    createdAt: task.createdAt.toISOString(),
-  }));
+  // Get upcoming tasks
+  const upcomingTasks = await db.tasks.findMany({
+    where: {
+      userId: dbUser.id,
+      completed: false,
+      dueDate: {
+        gte: new Date(),
+      },
+    },
+    take: 5,
+    orderBy: {
+      dueDate: "asc",
+    },
+  });
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Task Dashboard</h1>
-        <Button asChild>
-          <a href="/tasks/new">
-            <Plus className="mr-2 h-4 w-4" />
-            New Task
-          </a>
-        </Button>
-      </div>
-
-      <DashboardTaskList initialTasks={formattedTasks} />
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
+      <DashboardSidebar isCollapsed={true} />
+      <main className="flex-1 overflow-y-auto p-6">
+        <div className="container mx-auto py-10">
+          <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+          <DashboardOverview
+            user={dbUser}
+            workspaces={workspaces}
+            recentTasks={recentTasks}
+            upcomingTasks={upcomingTasks}
+          />
+        </div>
+      </main>
     </div>
   );
 }

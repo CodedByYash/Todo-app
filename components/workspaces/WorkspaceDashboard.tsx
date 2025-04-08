@@ -1,18 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
-import {
-  CheckCircle2,
-  Clock,
-  Users,
-  Settings,
-  ArrowRight,
-  Calendar,
-  PlusCircle,
-} from "lucide-react";
+import { Clock, Users, Settings, ArrowRight, PlusCircle } from "lucide-react";
 
 import {
   Card,
@@ -54,7 +45,7 @@ type Task = {
   title: string;
   description: string | null;
   completed: boolean;
-  priority: "LOW" | "MEDIUM" | "HIGH";
+  priority: "low" | "medium" | "high" | "no_priority";
   dueDate: Date | null;
   createdAt: Date;
   updatedAt: Date;

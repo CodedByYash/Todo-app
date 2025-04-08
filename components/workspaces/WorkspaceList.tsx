@@ -4,14 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
-import {
-  Briefcase,
-  Users,
-  Settings,
-  ArrowRight,
-  PlusCircle,
-  Search,
-} from "lucide-react";
+import { Users, Settings, PlusCircle, Search } from "lucide-react";
 
 import {
   Card,

@@ -7,6 +7,13 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -76,6 +83,7 @@ export function TaskForm({ workspaceId }: TaskFormProps = {}) {
   const [workspaces, setWorkspaces] = useState<{ id: string; name: string }[]>(
     []
   );
+  const [tags, setTags] = useState<{ id: string; name: string }[]>([]);
 
   // Initialize the form
   const form = useForm<FormData>({
@@ -84,7 +92,7 @@ export function TaskForm({ workspaceId }: TaskFormProps = {}) {
       title: "",
       description: "",
       priority: "low",
-      workspaceId: workspaceId || "personal", // Default to "personal"
+      workspaceId: workspaceId || "personal",
       tags: [],
       dueDate: undefined,
     },
@@ -103,6 +111,21 @@ export function TaskForm({ workspaceId }: TaskFormProps = {}) {
       }
     };
     fetchWorkspaces();
+  }, []);
+
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const response = await fetch("/api/tags");
+        if (response.ok) {
+          const data = await response.json();
+          setTags(data);
+        }
+      } catch (error) {
+        console.error("Error fetching tags:", error);
+      }
+    };
+    fetchTags();
   }, []);
 
   async function onSubmit(values: FormData) {
@@ -261,6 +284,52 @@ export function TaskForm({ workspaceId }: TaskFormProps = {}) {
                 </Select>
                 <FormDescription>
                   Assign this task to a workspace or keep it personal.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="tags"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tags</FormLabel>
+                <FormControl>
+                  <Command>
+                    <CommandInput placeholder="Search tags..." />
+                    <CommandEmpty>No tags found.</CommandEmpty>
+                    <CommandGroup>
+                      {tags.map((tag) => (
+                        <CommandItem
+                          key={tag.id}
+                          value={tag.id}
+                          onSelect={() => {
+                            const currentTags = field.value || [];
+                            const newTags = currentTags.includes(tag.id)
+                              ? currentTags.filter((id) => id !== tag.id)
+                              : [...currentTags, tag.id];
+                            field.onChange(newTags);
+                          }}
+                        >
+                          <div
+                            className={`mr-2 flex h-4 w-4 items-center justify-center rounded-sm border ${
+                              field.value?.includes(tag.id)
+                                ? "bg-primary text-primary-foreground"
+                                : ""
+                            }`}
+                          >
+                            {field.value?.includes(tag.id) && "✓"}
+                          </div>
+                          {tag.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </FormControl>
+                <FormDescription>
+                  Select tags to organize your task.
                 </FormDescription>
                 <FormMessage />
               </FormItem>

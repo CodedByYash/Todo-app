@@ -33,8 +33,8 @@ export type Task = {
   title: string;
   description: string;
   completed: boolean;
-  priority: "low" | "medium" | "high";
-  dueDate: string;
+  priority: "no_priority" | "low" | "medium" | "high";
+  dueDate: string | Date | number;
   tags: { id: string; name: string }[];
   createdAt: string;
 };
@@ -144,6 +144,8 @@ export function TaskList({
       monthLater.setMonth(monthLater.getMonth() + 1);
 
       result = result.filter((task) => {
+        if (!task.dueDate) return false;
+
         const dueDate = new Date(task.dueDate);
 
         if (filters.dueDate === "today") {
@@ -182,7 +184,7 @@ export function TaskList({
           new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         );
       } else if (sortBy === "priority") {
-        const priorityOrder = { high: 0, medium: 1, low: 2 };
+        const priorityOrder = { high: 0, medium: 1, low: 2, no_priority: 3 };
         return (
           (priorityOrder[a.priority] || 0) - (priorityOrder[b.priority] || 0)
         );

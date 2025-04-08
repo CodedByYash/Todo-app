@@ -1,17 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
-import {
-  CheckCircle2,
-  Clock,
-  Briefcase,
-  ArrowRight,
-  Calendar,
-  AlertTriangle,
-} from "lucide-react";
+import { Briefcase, ArrowRight, Calendar } from "lucide-react";
 
 import {
   Card,
@@ -22,7 +14,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
@@ -45,7 +36,7 @@ type Task = {
   title: string;
   description: string | null;
   completed: boolean;
-  priority: "LOW" | "MEDIUM" | "HIGH";
+  priority: "low" | "medium" | "high" | "no_priority";
   dueDate: Date | null;
 };
 
