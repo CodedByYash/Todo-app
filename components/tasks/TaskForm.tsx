@@ -128,36 +128,36 @@ export function TaskForm({ workspaceId }: TaskFormProps = {}) {
     fetchTags();
   }, []);
 
-  async function onSubmit(values: FormData) {
-    setIsSubmitting(true);
-    try {
-      const taskData = {
-        ...values,
-        dueDate: values.dueDate ? values.dueDate.toISOString() : null,
-      };
-      console.log("Sending task data:", taskData);
+async function onSubmit(values: FormData) {
+  setIsSubmitting(true);
+  try {
+    const taskData = {
+      ...values,
+      dueDate: values.dueDate ? values.dueDate.toISOString() : null,
+    };
+    console.log("Sending task data:", taskData);
 
-      const response = await fetch("/api/tasks", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(taskData),
-      });
+    const response = await fetch("/api/tasks", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(taskData),
+    });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.log("Server error:", errorData);
-        throw new Error("Failed to create task");
-      }
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.log("Server error:", errorData);
+      throw new Error("Failed to create task");
+    }
 
       form.reset(); // Reset the form on success
-    } catch (error) {
-      console.error("Error creating task:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
+  } catch (error) {
+    console.error("Error creating task:", error);
+  } finally {
+    setIsSubmitting(false);
   }
+}
 
   return (
     <CardWrapper>

@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+    console.log(body);
     const validatedData = createWorkspaceSchema.safeParse(body);
 
     if (!validatedData.success) {
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
         );
       }
     }
-
+    console.log("hi");
     // For PROFESSIONAL workspaces, check if user already has one
     if (validatedData.data.type === "PROFESSIONAL") {
       const existingProfessionalWorkspace = await db.workspace.findFirst({
